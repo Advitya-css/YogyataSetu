@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block main %}
+<div class="wrap page-head" style="padding-bottom:40px">
+  <h1>{{ t('not_found') }}</h1>
+  <p style="margin-top:20px"><a class="btn" href="{{ url_for('home') }}">{{ t('go_home') }}</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('about_title') }} · {{ t('site') }}{% endblock %}
+{% block main %}
+<div class="wrap">
+  <article class="prose page-head">
+    <h1>{{ t('about_title') }}</h1>
+    <p class="lead">{{ t('about_lead') }}</p>
+    <h2>{{ t('about_problem') }}</h2>
+    <ul><li>{{ t('p1') }}</li><li>{{ t('p2') }}</li><li>{{ t('p3') }}</li><li>{{ t('p4') }}</li></ul>
+    <h2>{{ t('about_how') }}</h2>
+    <ul><li>{{ t('a1') }}</li><li>{{ t('a2') }}</li><li>{{ t('a3') }}</li></ul>
+    <h2>{{ t('about_road') }}</h2>
+    <ol class="road">
+      <li class="done"><span>{{ t('r1') }}<span class="tag">{{ t('done') }}</span></span></li>
+      <li class="now"><span>{{ t('r2') }}<span class="tag">{{ t('now') }}</span></span></li>
+      <li><span>{{ t('r3') }}<span class="tag">{{ t('next') }}</span></span></li>
+      <li><span>{{ t('r4') }}</span></li>
+      <li><span>{{ t('r5') }}</span></li>
+    </ol>
+    <div class="notes" style="margin-top:40px;grid-template-columns:1fr">
+      <div class="note-box"><svg class="px l" aria-hidden="true"><use href="{{ PX }}#call"/></svg><div><h3>{{ t('fake_title') }}</h3><p>{{ t('fake_body') }}</p></div></div>
+      <div class="note-box ok"><svg class="px l" aria-hidden="true"><use href="{{ PX }}#submit"/></svg><div><h3>{{ t('trust_title') }}</h3><p>{{ t('trust_body') }}</p></div></div>
+    </div>
+    <p style="margin-top:32px"><a class="btn" href="{{ url_for('find') }}">{{ t('nav_find') }}</a></p>
+  </article>
+</div>
+{% endblock %}

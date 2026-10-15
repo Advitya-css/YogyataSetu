@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}{% if result %}{{ result.title }} · {% endif %}{{ t('check_title') }} · {{ t('site') }}{% endblock %}
+{% macro scheme_card(sc, main=False) %}
+<div class="scheme-card">
+  <p class="where">{{ sc.where }}</p>
+  <h3><a href="{{ sc.url }}">{{ sc.name }}</a></h3>
+  <p><span class="amt">{{ sc.amount }}</span>{% if main %} · {{ sc.benefit }}{% endif %}</p>
+  {% if main %}
+  <div class="btns">
+    <a class="btn" href="{{ sc.url }}">{{ t('r_open_scheme') }}</a>
+    {% if sc.official %}<a class="btn ghost" href="{{ sc.official }}" target="_blank" rel="noopener">{{ sc.official_host }} <svg aria-hidden="true"><use href="#i-open"/></svg></a>{% endif %}
+  </div>
+  {% if sc.helpline %}<p class="muted" style="margin-top:10px;font-size:.95rem">{{ t('helpline') }}: <a href="tel:{{ sc.helpline|replace('-', '') }}">{{ sc.helpline }}</a></p>{% endif %}
+  {% endif %}
+</div>
+{% endmacro %}
+{% block main %}
+<div class="wrap">
+  <header class="page-head">
+    <h1>{{ t('check_title') }}</h1>
+    <p class="lead">{{ t('check_lead') }}</p>
+  </header>
+
+  {% if reported %}<p class="note ok" role="status" id="result">{{ t('report_done') }}</p>{% endif %}
+
+  <form class="check-form" method="post" action="{{ url_for('check') }}?lang={{ lang }}#result">
+    <label class="check-label" for="q">{{ t('check_label') }}</label>
+    <textarea class="field check-input" id="q" name="q" rows="4" maxlength="4000" placeholder="{{ t('check_ph') }}" required>{{ q }}</textarea>
+    <div class="check-bar">
+      <button class="btn" type="submit">{{ t('check_btn') }}</button>
+      <button class="act" type="button" data-paste hidden>{{ t('check_paste') }}</button>
+      <span class="muted small">{{ t('check_private') }}</span>
+    </div>
+    <p class="examples"><span>{{ t('check_try') }}</span>
+      {% for key, text in examples %}<a class="chip" href="{{ url_for('check', q=text, lang=lang) }}#result">{{ t(key) }}</a>{% endfor %}
+    </p>
+  </form>
+
+  {% if error %}<p class="errors" role="alert" id="result">{{ t(error) }}</p>{% endif %}
+
+  {% if result %}
+  <section class="verdict v-{{ result.tone }}" id="result" aria-labelledby="v-title" tabindex="-1">
+    <div class="verdict-head">
+      <svg class="px l" aria-hidden="true"><use href="{{ PX }}#{{ result.icon }}"/></svg>
+      <div>
+        <p class="kicker">{{ t('r_answer') }}</p>
+        <h2 id="v-title">{{ result.title }}</h2>
+        <p>{{ result.body }}</p>
+        {% if result.confirmed %}<p class="confirmed">{{ t('r_confirmed') }}</p>{% endif %}
+        {% if result.reports %}<p class="crowd">{{ t('r_reported', n=result.reports) }}</p>{% endif %}
+        {% if result.seen > 1 %}<p class="muted" style="font-size:.95rem">{{ t('r_seen', n=result.seen) }}</p>{% endif %}
+        <div class="actions">
+          <button class="act" type="button" data-listen data-say="{{ result.title }}. {{ result.body }} {% for s in result.signals %}{{ s.text }} {% endfor %}"><svg aria-hidden="true"><use href="#i-listen"/></svg><span>{{ t('listen') }}</span></button>
+          {% if share_url %}
+          <div class="share-menu">
+            <button class="act" type="button" data-share aria-expanded="false" data-title="{{ result.title }}" data-text="{{ result.title }}: {{ q|truncate(120) }}" data-url="{{ share_url }}"><svg aria-hidden="true"><use href="#i-share"/></svg>{{ t('r_share') }}</button>
+            <div class="share-pop" role="menu">
+              <a role="menuitem" data-wa target="_blank" rel="noopener">{{ t('whatsapp') }}</a>
+              <a role="menuitem" data-sms>{{ t('sms') }}</a>
+              <button role="menuitem" type="button" data-copy>{{ t('copy_link') }}</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="check-grid">
+    <div class="main-col">
+      {% if result.fake %}
+      <section class="section" aria-labelledby="h-claim">
+        <h2 id="h-claim">{{ t('r_claim') if result.fake.kind == 'fake' else t('r_scam_claim') }}</h2>
+        {% if result.fake.claim %}<blockquote class="claim">{{ result.fake.claim }}</blockquote>{% endif %}
+        <p class="muted" style="font-size:.95rem">
+          {% if result.fake.source %}{{ t('r_source') }}: <a href="{{ result.fake.source }}" target="_blank" rel="noopener">{{ result.fake.source_host }}</a>{% endif %}
+          {% if result.fake.source2 %} · <a href="{{ result.fake.source2 }}" target="_blank" rel="noopener">{{ domain(result.fake.source2) }}</a>{% endif %}
+          {% if result.fake.checked %} · {{ t('r_checked', d=result.fake.checked) }}{% endif %}
+        </p>
+      </section>
+      {% endif %}
+
+      {% if result.scheme %}
+      <section class="section" aria-labelledby="h-match">
+        <h2 id="h-match">{{ t('r_real_scheme') if result.verdict in ('scam', 'caution') else t('r_matched') }}</h2>
+        {{ scheme_card(result.scheme, True) }}
+        {% if result.also %}
+          <p class="muted" style="margin-top:16px">{{ t('r_also') }}</p>
+          {% for sc in result.also %}{{ scheme_card(sc) }}{% endfor %}
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if result.suggest %}
+      <section class="section" aria-labelledby="h-sugg">
+        <h2 id="h-sugg">{{ t('r_suggest') }}</h2>
+        {% for sc in result.suggest %}{{ scheme_card(sc) }}{% endfor %}
+      </section>
+      {% endif %}
+
+      <section class="section" aria-labelledby="h-why">
+        <h2 id="h-why">{{ t('r_why') }}</h2>
+        {% if result.signals %}
+        <ul class="signals">
+          {% for s in result.signals %}
+          <li class="s{{ s.sev }}"><div><span class="sev">{{ t('sev_' ~ s.sev) }}</span>{{ s.text }}{% if s.ev and s.ev|length < 140 %}<br><q>{{ s.ev }}</q>{% endif %}</div></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>{{ t('r_no_signals') }}</p>
+        {% endif %}
+      </section>
+
+      {% if segs %}
+      <section class="section" aria-labelledby="h-msg">
+        <h2 id="h-msg">{{ t('r_message') }}</h2>
+        <div class="msg">{% for chunk, mark in segs %}{% if mark %}<mark>{{ chunk }}</mark>{% else %}{{ chunk }}{% endif %}{% endfor %}</div>
+      </section>
+      {% endif %}
+
+      {% if result.links %}
+      <section class="section" aria-labelledby="h-links">
+        <h2 id="h-links">{{ t('r_links') }}</h2>
+        <table class="link-table">
+          <thead><tr><th>{{ t('r_site') }}</th><th>{{ t('r_status') }}</th></tr></thead>
+          <tbody>
+          {% for ln in result.links %}
+            <tr><td class="host">{{ ln.host }}</td><td><span class="badge {{ ln.status }}">{{ ln.label }}</span>{% if ln.why %}<br><span class="muted" style="font-size:.92rem">{{ ln.why }}</span>{% endif %}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="side-col">
+      <div class="side-box">
+        <h2>{{ t('r_todo') }}</h2>
+        <ol class="todo">
+          {% if result.tone == 'bad' %}
+            <li><span>{{ t('do_dont') }}</span></li>
+            <li><span>{{ t('do_otp') }}</span></li>
+            <li><span>{{ t('do_1930') }}<br><a href="tel:1930">1930</a> · <a href="{{ HELP.cyber }}" target="_blank" rel="noopener">cybercrime.gov.in</a></span></li>
+            <li><span>{{ t('do_chakshu') }}<br><a href="{{ HELP.chakshu }}" target="_blank" rel="noopener">sancharsaathi.gov.in</a></span></li>
+            <li><span>{{ t('do_pib') }}<br><a href="{{ HELP.pib_wa }}" target="_blank" rel="noopener">+91 87997 11259</a></span></li>
+          {% elif result.tone == 'good' %}
+            <li><span>{{ t('do_official') }}</span></li>
+            <li><span>{{ t('do_free') }}</span></li>
+            <li><span>{{ t('do_otp') }}</span></li>
+          {% else %}
+            <li><span>{{ t('do_dont') }}</span></li>
+            <li><span>{{ t('do_ask') }}<br><a href="{{ HELP.myscheme }}" target="_blank" rel="noopener">myscheme.gov.in</a></span></li>
+            <li><span>{{ t('do_pib') }}<br><a href="{{ HELP.pib_wa }}" target="_blank" rel="noopener">+91 87997 11259</a></span></li>
+            <li><span>{{ t('do_otp') }}</span></li>
+          {% endif %}
+        </ol>
+      </div>
+
+      <div class="side-box report">
+        <h2>{{ t('report_title') }}</h2>
+        <p class="muted" style="margin-top:6px;font-size:.95rem">{{ t('report_body') }}</p>
+        <form method="post" action="{{ url_for('check_report') }}?lang={{ lang }}">
+          <input type="hidden" name="q" value="{{ q }}">
+          <label class="visually-hidden" for="note">{{ t('report_note') }}</label>
+          <textarea class="field" id="note" name="note" maxlength="500" placeholder="{{ t('report_note') }}"></textarea>
+          <button class="btn ghost" type="submit">{{ t('report_btn') }}</button>
+        </form>
+      </div>
+      <p class="muted" style="margin-top:16px;font-size:.88rem">{{ t('check_limits') }}</p>
+    </aside>
+  </div>
+
+  {% else %}
+  <section class="how" aria-label="{{ t('how_t') }}">
+    <div>
+      <h3><svg class="px s" aria-hidden="true"><use href="{{ PX }}#search"/></svg>{{ t('how_1_t') }}</h3>
+      <p class="muted">{{ t('how_1', n=total) }}</p>
+    </div>
+    <div>
+      <h3><svg class="px s" aria-hidden="true"><use href="{{ PX }}#warn"/></svg>{{ t('how_2_t') }}</h3>
+      <p class="muted">{{ t('how_2') }}</p>
+    </div>
+    <div>
+      <h3><svg class="px s" aria-hidden="true"><use href="{{ PX }}#web"/></svg>{{ t('how_3_t') }}</h3>
+      <p class="muted">{{ t('how_3') }}</p>
+    </div>
+  </section>
+  <section class="band" style="margin-top:28px">
+    <h2>{{ t('rules_t') }}</h2>
+    <ul class="rules">
+      <li>{{ t('do_free') }}</li>
+      <li>{{ t('do_otp') }}</li>
+      <li>{{ t('rule_gov') }}</li>
+      <li>{{ t('do_1930') }} <a href="tel:1930">1930</a> · <a href="{{ HELP.cyber }}" target="_blank" rel="noopener">cybercrime.gov.in</a></li>
+    </ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

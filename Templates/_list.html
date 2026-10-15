@@ -1,0 +1,2 @@
+{% from '_macros.html' import row with context %}
+{% if items %}<ul class="rows">{% for s in items %}{{ row(s) }}{% endfor %}</ul>{% endif %}

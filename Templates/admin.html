@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Admin · {{ t('site') }}{% endblock %}
+{% block main %}
+<div class="wrap admin">
+  <header class="page-head">
+    <h1>Checker admin</h1>
+    <p class="muted">Review messages people reported, confirm scams, and add new fake schemes. This page is in English only.</p>
+  </header>
+
+  {% if login %}
+    {% if has_key %}
+    <form method="post" action="{{ url_for('admin_login') }}" class="side-box" style="max-width:420px;margin-top:20px">
+      <label for="key">Admin key</label>
+      <input class="field" id="key" name="key" type="password" autocomplete="current-password" required style="margin:8px 0 12px">
+      {% if bad %}<p class="errors" role="alert">Wrong key.</p>{% endif %}
+      <button class="btn" type="submit">Log in</button>
+    </form>
+    {% else %}
+    <p class="errors" role="alert">The admin page only opens on the computer that runs the server. To use it from another device, start the server with an admin key: <code>YS_ADMIN_KEY=your-secret python server.py</code></p>
+    {% endif %}
+  {% else %}
+
+  {% if done %}<p class="note ok" role="status">Saved ({{ done }}).</p>{% endif %}
+
+  <section class="stats" aria-label="Numbers">
+    <div><b>{{ stats.checks }}</b>checks</div>
+    <div><b>{{ stats.checks_week }}</b>in the last 7 days</div>
+    <div><b>{{ stats.people }}</b>different visitors</div>
+    <div><b>{{ stats.reports_open }}</b>open reports</div>
+    <div><b>{{ stats.labels }}</b>confirmed messages</div>
+    <div><b>{{ fakes|length }}</b>fakes &amp; scam patterns</div>
+  </section>
+  <p class="muted" style="font-size:.95rem">
+    Verdicts: {% for v, n in stats.by_verdict.items() %}{{ v }} {{ n }}{{ ', ' if not loop.last }}{% endfor %}{% if not stats.by_verdict %}none yet{% endif %}.
+    Languages: {% for l, n in stats.langs.items() %}{{ l }} {{ n }}{{ ', ' if not loop.last }}{% endfor %}{% if not stats.langs %}none yet{% endif %}.
+  </p>
+  {% if stats.top_fakes %}<p class="muted" style="font-size:.95rem">Most checked fakes: {% for r in stats.top_fakes %}{{ r.fake }} ({{ r.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+  {% if stats.top_real %}<p class="muted" style="font-size:.95rem">Most checked real schemes: {% for r in stats.top_real %}{{ BY_ID[r.matched].name if r.matched in BY_ID else r.matched }} ({{ r.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+
+  <section class="section" style="margin-top:30px" id="reports">
+    <h2>Reported messages</h2>
+    <nav class="tabs" aria-label="Report status">
+      {% for st in ('open', 'scam', 'safe', 'dismissed') %}<a class="chip" href="{{ url_for('admin', status=st) }}#reports" {% if st == status %}aria-current="page" style="border-color:var(--ink);font-weight:600"{% endif %}>{{ st }}</a>{% endfor %}
+    </nav>
+    {% for g in groups %}
+    <article class="rep">
+      <p><strong>{{ g.n }} report{{ 's' if g.n != 1 }}</strong> · checked by {{ g.seen }} · last {{ g.last[:16]|replace('T', ' ') }} UTC ·
+        checker now says <strong>{{ g.now }}</strong>{% if g.now_fake %} (fake: {{ g.now_fake }}){% elif g.now_scheme %} ({{ BY_ID[g.now_scheme].name }}){% endif %}</p>
+      <div class="msg">{{ g.text }}</div>
+      {% if g.notes %}<p class="muted" style="font-size:.95rem">Notes: {{ g.notes }}</p>{% endif %}
+      {% if status == 'open' %}
+      <form method="post" action="{{ url_for('admin_action') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="hash" value="{{ g.hash }}"><input type="hidden" name="action" value="scam"><button class="btn" type="submit">Confirm scam</button></form>
+      <form method="post" action="{{ url_for('admin_action') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="hash" value="{{ g.hash }}"><input type="hidden" name="action" value="safe"><button class="btn ghost" type="submit">Mark safe</button></form>
+      <form method="post" action="{{ url_for('admin_action') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="hash" value="{{ g.hash }}"><input type="hidden" name="action" value="dismiss"><button class="btn ghost" type="submit">Dismiss</button></form>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="muted" style="margin-top:12px">Nothing here.</p>
+    {% endfor %}
+  </section>
+
+  <section class="section" style="margin-top:36px" id="labels">
+    <h2>Confirmed messages</h2>
+    <p class="muted" style="font-size:.95rem">Anyone who checks exactly the same text gets this answer.</p>
+    {% if labels %}
+    <table>
+      <thead><tr><th>Answer</th><th>Message</th><th>Since</th><th></th></tr></thead>
+      <tbody>
+      {% for l in labels %}
+        <tr><td><strong>{{ l.label }}</strong></td><td>{{ (l.sample or l.hash)|truncate(160) }}</td><td>{{ l.created[:10] }}</td>
+          <td><form method="post" action="{{ url_for('admin_action') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="hash" value="{{ l.hash }}"><input type="hidden" name="action" value="unlabel"><button class="act" type="submit">Remove</button></form></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted">None yet.</p>{% endif %}
+  </section>
+
+  <section class="section" style="margin-top:36px" id="fakes">
+    <h2>Add a fake scheme</h2>
+    <p class="muted" style="font-size:.95rem">Use this when PIB Fact Check or a state government says a scheme is fake. It works right away, for every spelling close to the names you give.</p>
+    <form method="post" action="{{ url_for('admin_fake') }}" class="side-box" style="margin-top:12px;box-shadow:none;border-width:1px">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="grid2">
+        <label>Name <input class="field" name="name" required maxlength="120" placeholder="PM Free Bicycle Yojana"></label>
+        <label>Fact-check link <input class="field" name="source" maxlength="400" placeholder="https://x.com/PIBFactCheck/status/..."></label>
+      </div>
+      <label style="margin-top:10px">Other names, one per line (Hindi and other spellings help)
+        <textarea class="field" name="aliases" rows="3" placeholder="प्रधानमंत्री फ्री साइकिल योजना"></textarea></label>
+      <label style="margin-top:10px">What the fake message claims (shown to visitors)
+        <textarea class="field" name="claim" rows="2" maxlength="600"></textarea></label>
+      <label style="margin-top:10px"><span>Is it a scam that uses a <em>real</em> scheme's name? Pick the real scheme (then the names above are scam phrases, e.g. "approval letter fee")</span>
+        <select class="field" name="real_id"><option value="">No, the scheme itself is fake</option>{% for sid, s in BY_ID.items() %}<option value="{{ sid }}">{{ s.name }}</option>{% endfor %}</select></label>
+      <button class="btn" type="submit" style="margin-top:14px">Add</button>
+    </form>
+
+    <h2 style="margin-top:30px">Known fakes and scam patterns</h2>
+    <table style="margin-top:10px">
+      <thead><tr><th>Name</th><th>Type</th><th>Checked</th><th>Source</th><th></th></tr></thead>
+      <tbody>
+      {% for f in fakes %}
+        <tr><td>{{ f.name }}{% if f.real_id %}<br><span class="muted">uses: {{ BY_ID[f.real_id].name if f.real_id in BY_ID else f.real_id }}</span>{% endif %}</td>
+          <td>{{ f.kind or 'fake' }}{% if f.custom %} · added here{% endif %}</td><td>{{ f.checked or '' }}</td>
+          <td>{% if f.source %}<a href="{{ f.source }}" target="_blank" rel="noopener">{{ domain(f.source) }}</a>{% endif %}</td>
+          <td>{% if f.custom %}<form method="post" action="{{ url_for('admin_fake') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="delete" value="{{ f.id }}"><button class="act" type="submit">Delete</button></form>{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:10px;font-size:.92rem">Built-in entries live in <code>data/fakes.json</code>. Edit that file to change them, then restart.</p>
+  </section>
+
+  {% if has_key %}
+  <form method="post" action="{{ url_for('admin_logout') }}" style="margin-top:30px"><button class="btn ghost" type="submit">Log out</button></form>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

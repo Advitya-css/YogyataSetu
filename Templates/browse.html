@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import row with context %}
+{% block title %}{{ t('all_title') }} · {{ t('site') }}{% endblock %}
+{% block main %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>{{ t('all_title') }}</h1>
+    <p class="muted">{{ t('all_sub', n=total) }}</p>
+    <form action="{{ url_for('browse') }}" method="get" data-autosubmit>
+      <input type="hidden" name="lang" value="{{ lang }}">
+      <div class="searchbar">
+        <label class="visually-hidden" for="q">{{ t('search') }}</label>
+        <input class="field" id="q" type="search" name="q" value="{{ q }}" placeholder="{{ t('search_ph') }}">
+        <button class="btn" type="submit">{{ t('search') }}</button>
+      </div>
+      <div class="filter-row">
+        <label>{{ t('f_state') }}
+          <select class="field" name="state">
+            <option value="">{{ t('all_states') }}</option>
+            {% for st in STATE_LIST %}<option value="{{ st }}" {% if f_state==st %}selected{% endif %}>{{ tx.st_name(st) }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>{{ t('f_level') }}
+          <select class="field" name="level">
+            <option value="">{{ t('any') }}</option>
+            <option value="central" {% if f_level=='central' %}selected{% endif %}>{{ t('filter_central') }}</option>
+            <option value="state" {% if f_level=='state' %}selected{% endif %}>{{ t('filter_state') }}</option>
+          </select>
+        </label>
+        <label>{{ t('f_cat') }}
+          <select class="field" name="cat">
+            <option value="">{{ t('any') }}</option>
+            {% for c in CATEGORIES %}<option value="{{ c }}" {% if f_cat==c %}selected{% endif %}>{{ t('c_'+c) }}</option>{% endfor %}
+          </select>
+        </label>
+        {% if q or f_state or f_level or f_cat %}<a class="act clear" href="{{ url_for('browse') }}">{{ t('clear') }}</a>{% endif %}
+      </div>
+    </form>
+  </div>
+  <p class="muted" style="margin:18px 0 0" aria-live="polite">{{ t('showing', n=items|length, t=total) }}</p>
+  {% if items %}
+  <ul class="rows" style="border-top:2px solid var(--line-strong);margin-top:8px">{% for s in items %}{{ row(s) }}{% endfor %}</ul>
+  {% else %}
+  <div class="empty"><h2>{{ t('none_title') }}</h2><a class="btn" href="{{ url_for('browse') }}">{{ t('clear') }}</a></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import sentence_form with context %}
+{% block main %}
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <h1>{{ t('hero_title') }}</h1>
+      <p class="lead">{{ t('hero_sub') }}</p>
+      {{ sentence_form(profile) }}
+    </div>
+    <nav aria-labelledby="needs-h">
+      <ul class="needs-list">
+        <li><h2 id="needs-h">{{ t('need_title') }}</h2></li>
+        {% for c in CATEGORIES if counts[c] %}
+        <li><a href="{{ url_for('browse', cat=c) }}"><svg class="px" aria-hidden="true"><use href="{{ PX }}#{{ CAT_ICON[c] }}"/></svg><strong>{{ t('c_'+c) }}</strong><span>{{ t('schemes_n', n=counts[c]) }}</span></a></li>
+        {% endfor %}
+      </ul>
+      <p class="numbers">{{ t('numbers', n=total, s=state_count) }}</p>
+    </nav>
+  </section>
+</div>
+
+<section class="band">
+  <div class="wrap">
+    <h2>{{ t('states_title') }}</h2>
+    <ul class="state-grid">
+      {% for st in STATE_LIST %}<li><a href="{{ url_for('browse', state=st) }}" lang="{{ lang }}"><span>{{ tx.st_name(st) }}</span><small>{{ state_counts[st] }}</small></a></li>{% endfor %}
+    </ul>
+    <p class="muted" style="margin-top:14px">{{ t('states_note', c=central_count) }}</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap notes">
+    <div class="note-box">
+      <svg class="px l" aria-hidden="true"><use href="{{ PX }}#call"/></svg>
+      <div><h3>{{ t('fake_title') }}</h3><p>{{ t('fake_body') }}</p><p class="check-cta"><a class="btn ghost" href="{{ url_for('check') }}">{{ t('check_cta') }}</a></p></div>
+    </div>
+    <div class="note-box ok">
+      <svg class="px l" aria-hidden="true"><use href="{{ PX }}#submit"/></svg>
+      <div><h3>{{ t('trust_title') }}</h3><p>{{ t('trust_body') }}</p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

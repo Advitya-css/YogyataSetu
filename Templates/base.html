@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ t('site') }} — {{ t('tagline') }}{% endblock %}</title>
+<meta name="description" content="{{ t('hero_sub') }}">
+<meta name="theme-color" content="#1B2140">
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=8">
+<script>try { var th = localStorage.getItem('ys_theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-save" viewBox="0 0 24 24"><path class="ic-save" d="M6 3h12v18l-6-4-6 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></g></symbol>
+  <symbol id="i-listen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></g></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></g></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+</svg>
+<a class="skip" href="#main">{{ t('skip') }}</a>
+
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="brand" href="{{ url_for('home') }}">
+      <svg class="px" aria-hidden="true"><use href="{{ PX }}#visit"/></svg>
+      <span class="brand-name">{{ t('site') }}<small>{{ t('tagline') }}</small></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="{{ url_for('find') }}" {% if page=='find' %}aria-current="page"{% endif %}>{{ t('nav_find') }}</a>
+      <a href="{{ url_for('browse') }}" {% if page=='browse' %}aria-current="page"{% endif %}>{{ t('nav_all') }}</a>
+      <a href="{{ url_for('check') }}" {% if page=='check' %}aria-current="page"{% endif %}>{{ t('nav_check') }}</a>
+      <a href="{{ url_for('saved') }}" {% if page=='saved' %}aria-current="page"{% endif %}>{{ t('nav_saved') }}<span class="count" data-saved-count></span></a>
+      <a href="{{ url_for('about') }}" {% if page=='about' %}aria-current="page"{% endif %}>{{ t('nav_about') }}</a>
+    </nav>
+    <div class="tools">
+      <label class="visually-hidden" for="lang-pick">{{ t('language') }}</label>
+      <select id="lang-pick" class="lang-select" data-lang-pick>
+        {% for code, native, _ in LANGS %}<option value="{{ lang_urls[code] }}" lang="{{ code }}" {% if code == lang %}selected{% endif %}>{{ native }}</option>{% endfor %}
+      </select>
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="{{ t('theme') }}" title="{{ t('theme') }}"><svg><use href="#i-moon"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>{{ t('disclaimer') }}</p>
+    <p>{{ t('footer_made') }} © 2026 {{ t('site') }}</p>
+  </div>
+</footer>
+
+<nav class="mobile-nav" aria-label="Main">
+  <a href="{{ url_for('find') }}" {% if page in ('find','home') %}aria-current="page"{% endif %}><svg class="px" aria-hidden="true"><use href="{{ PX }}#form"/></svg>{{ t('nav_find') }}</a>
+  <a href="{{ url_for('browse') }}" {% if page=='browse' %}aria-current="page"{% endif %}><svg class="px" aria-hidden="true"><use href="{{ PX }}#web"/></svg>{{ t('nav_all') }}</a>
+  <a href="{{ url_for('check') }}" {% if page=='check' %}aria-current="page"{% endif %}><svg class="px" aria-hidden="true"><use href="{{ PX }}#shield"/></svg>{{ t('nav_check') }}</a>
+  <a href="{{ url_for('saved') }}" {% if page=='saved' %}aria-current="page"{% endif %}><svg class="px" aria-hidden="true"><use href="{{ PX }}#card"/></svg><span>{{ t('nav_saved') }}<span class="count" data-saved-count></span></span></a>
+  <a href="{{ url_for('about') }}" {% if page=='about' %}aria-current="page"{% endif %}><svg class="px" aria-hidden="true"><use href="{{ PX }}#community"/></svg>{{ t('nav_about') }}</a>
+</nav>
+
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+<script>
+  window.YS = { lang: {{ lang|tojson }}, speech: {{ speech_lang|tojson }},
+    t: {{ {'save': t('save'), 'saved': t('saved'), 'listen': t('listen'), 'stop': t('stop'), 'copied': t('copied'), 'pasted': t('check_pasted')}|tojson }} };
+</script>
+<script src="{{ url_for('static', filename='app.js') }}?v=5" defer></script>
+</body>
+</html>

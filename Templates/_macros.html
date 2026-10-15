@@ -1,0 +1,102 @@
+{% macro sentence_form(profile, errors=[], compact=False) -%}
+<form class="sentence" action="{{ url_for('find') }}" method="get" aria-label="{{ t('form_label') }}" novalidate data-sentence-form>
+  <input type="hidden" name="lang" value="{{ lang }}">
+  <input type="hidden" name="more" value="{{ '1' if profile.more else '' }}" data-more-flag>
+  <div class="line">
+    <span>{{ t('l1a') }}</span>
+    <label class="blank num"><span class="visually-hidden">{{ t('age') }}</span>
+      <input type="number" name="age" inputmode="numeric" min="0" max="120" placeholder="{{ t('age_ph') }}" value="{{ profile.raw_age or '' }}" required>
+    </label>
+    <span>{{ t('l1b') }}</span>
+    <label class="blank"><span class="visually-hidden">{{ t('state') }}</span>
+      <select name="state" required>
+        <option value="" disabled {% if not profile.state %}selected{% endif %} hidden>{{ t('choose') }}</option>
+        {% for st in STATE_LIST %}<option value="{{ st }}" {% if profile.state==st %}selected{% endif %}>{{ tx.st_name(st) }}</option>{% endfor %}
+        <option value="other" {% if profile.state=='other' %}selected{% endif %}>{{ t('other_state') }}</option>
+      </select>
+    </label>
+    {% if t('l1c') %}<span>{{ t('l1c') }}</span>{% endif %}
+  </div>
+  <div class="line">
+    <span>{{ t('l2a') }}</span>
+    <label class="blank"><span class="visually-hidden">{{ t('gender') }}</span>
+      <select name="gender" required>
+        <option value="" disabled {% if not profile.gender %}selected{% endif %} hidden>{{ t('choose') }}</option>
+        {% for g in GENDERS %}<option value="{{ g }}" {% if profile.gender==g %}selected{% endif %}>{{ t('g_'+g) }}</option>{% endfor %}
+      </select>
+    </label>
+    <span>{{ t('l2b') }}</span>
+    <label class="blank"><span class="visually-hidden">{{ t('occupation') }}</span>
+      <select name="occupation" required>
+        <option value="" disabled {% if not profile.occupation %}selected{% endif %} hidden>{{ t('choose') }}</option>
+        {% for o in OCCUPATIONS %}<option value="{{ o }}" {% if profile.occupation==o %}selected{% endif %}>{{ t('o_'+o) }}</option>{% endfor %}
+      </select>
+    </label>
+    {% if t('l2c') %}<span>{{ t('l2c') }}</span>{% endif %}
+  </div>
+
+  <details class="more" {% if profile.more and not compact %}open{% endif %} data-more>
+    <summary>{{ t('more_title') }}</summary>
+    <p class="sub">{{ t('more_sub') }}</p>
+    <fieldset>
+      <legend>{{ t('area') }}</legend>
+      <div class="radios">
+        {% for v in ['rural', 'urban'] %}<label><input type="radio" name="area" value="{{ v }}" {% if profile.area==v %}checked{% endif %}><span>{{ t('area_'+v) }}</span></label>{% endfor %}
+        <label><input type="radio" name="area" value="" {% if not profile.area %}checked{% endif %}><span>{{ t('not_say') }}</span></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>{{ t('caste') }}</legend>
+      <div class="radios">
+        {% for v in ['general', 'sc', 'st', 'obc'] %}<label><input type="radio" name="caste" value="{{ v }}" {% if profile.caste==v %}checked{% endif %}><span>{{ t('caste_'+v) }}</span></label>{% endfor %}
+        <label><input type="radio" name="caste" value="" {% if not profile.caste %}checked{% endif %}><span>{{ t('not_say') }}</span></label>
+      </div>
+    </fieldset>
+    <div class="checks">
+      {% for f in FLAGS %}<label {% if f in ('widow','pregnant') %}data-female-only{% endif %}><input type="checkbox" name="{{ f }}" value="1" {% if profile.flags and profile.flags[f] %}checked{% endif %}><span>{{ t('q_'+f) }}</span></label>{% endfor %}
+    </div>
+  </details>
+
+  {% if errors %}<div class="errors" role="alert">{% for e in errors %}<p>{{ t(e) }}</p>{% endfor %}</div>{% endif %}
+  <div class="form-foot"><button class="btn" type="submit">{{ t('submit') }}</button></div>
+</form>
+{%- endmacro %}
+
+{% macro reason_text(key, kw) -%}
+{%- if key == 'why_central' -%}{{ t('why_central') }}
+{%- elif key == 'why_state' -%}{{ t('why_state', s=tx.st_name(kw.s)) }}
+{%- elif key == 'why_gender' -%}{{ t('why_gender', g=t('gl_'+kw.g)|lower if lang=='en' else t('gl_'+kw.g)) }}
+{%- elif key == 'why_age' -%}{{ t('why_age', a=kw.a, r=tx.age_text(kw.r)) }}
+{%- elif key == 'why_occ' -%}{{ t('why_occ', o=t('ol_'+kw.o)) }}
+{%- elif key == 'why_70' -%}{{ t('why_70') }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro row(s, reasons=None, show_needs=False) -%}
+{%- set url = url_for('scheme', sid=s.id) -%}
+<li class="row" data-level="{{ s.level }}" data-id="{{ s.id }}" data-cats="{{ s.cat|join(' ') }}">
+  <div class="amt" data-speak>{{ tx.sx(s, 'amount') }}</div>
+  <div class="body">
+    <h3><a href="{{ url }}">{{ s.name }}</a></h3>
+    <p class="benefit">{{ tx.sx(s, 'benefit') }}</p>
+    <p class="meta"><span>{{ tx.where(s) }}</span><span>{{ t('mode_' + s.mode) }}</span>{% if s.helpline %}<span>{{ t('helpline') }} {{ s.helpline }}</span>{% endif %}</p>
+    {% if reasons %}<p class="why"><b>{{ t('why') }}</b> {% for key, kw in reasons %}{{ reason_text(key, kw) }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+    {% if show_needs and s.needs %}<p class="flag">{{ t('why_needs', x=tx.needs_text(s)) }}</p>{% endif %}
+    {% if s.verify %}<p class="flag">{{ t('verify_badge') }}</p>{% endif %}
+    <div class="actions">
+      <a class="act primary" href="{{ url }}">{{ t('details') }}</a>
+      <button class="act" type="button" data-save="{{ s.id }}" aria-pressed="false"><svg aria-hidden="true"><use href="#i-save"/></svg><span>{{ t('save') }}</span></button>
+      <div class="share-menu">
+        <button class="act" type="button" data-share aria-expanded="false" data-title="{{ s.name }}" data-text="{{ s.name }}: {{ tx.sx(s, 'amount') }}. {{ tx.sx(s, 'benefit') }}" data-url="{{ url }}?lang={{ lang }}"><svg aria-hidden="true"><use href="#i-share"/></svg>{{ t('share') }}</button>
+        <div class="share-pop" role="menu">
+          <a role="menuitem" data-wa target="_blank" rel="noopener">{{ t('whatsapp') }}</a>
+          <a role="menuitem" data-sms>{{ t('sms') }}</a>
+          <button role="menuitem" type="button" data-copy>{{ t('copy_link') }}</button>
+        </div>
+      </div>
+      <button class="act" type="button" data-listen data-say="{{ s.name }}. {{ tx.sx(s, 'amount') }}. {{ tx.sx(s, 'benefit') }} {{ t('who') }}: {{ tx.sx(s, 'who') }}"><svg aria-hidden="true"><use href="#i-listen"/></svg><span>{{ t('listen') }}</span></button>
+    </div>
+  </div>
+  <svg class="px" aria-hidden="true"><use href="{{ PX }}#{{ CAT_ICON.get(s.cat[0], 'form') }}"/></svg>
+</li>
+{%- endmacro %}

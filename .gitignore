@@ -1,0 +1,19 @@
+# Database and cache
+data/yogyatasetu.db
+data/yogyatasetu.db-*
+data/reports.csv
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Vercel deployment cache
+.vercel/

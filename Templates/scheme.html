@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import row with context %}
+{% block title %}{{ s.name }} · {{ t('site') }}{% endblock %}
+{% block main %}
+<div class="wrap">
+  <p class="crumb"><a href="{{ url_for('browse') }}" data-back>← {{ t('back') }}</a></p>
+
+  <header class="detail-head">
+    <div>
+      <p class="where">{{ tx.where(s) }}</p>
+      <h1>{{ s.name }}</h1>
+      <p class="big-amt">{{ tx.sx(s, 'amount') }}</p>
+      <p class="benefit">{{ tx.sx(s, 'benefit') }}</p>
+      {% if tx.note(s) %}<p class="note">{{ tx.note(s) }}</p>{% endif %}
+      {% if s.verify %}<p class="note"><strong>{{ t('verify_badge') }}.</strong> {{ t('verify_text') }}</p>{% endif %}
+      <div class="actions" style="margin-top:14px">
+        <button class="act" type="button" data-save="{{ s.id }}" aria-pressed="false"><svg aria-hidden="true"><use href="#i-save"/></svg><span>{{ t('save') }}</span></button>
+        <div class="share-menu">
+          <button class="act" type="button" data-share aria-expanded="false" data-title="{{ s.name }}" data-text="{{ s.name }}: {{ tx.sx(s, 'amount') }}. {{ tx.sx(s, 'benefit') }}" data-url="{{ url_for('scheme', sid=s.id) }}?lang={{ lang }}"><svg aria-hidden="true"><use href="#i-share"/></svg>{{ t('share') }}</button>
+          <div class="share-pop" role="menu">
+            <a role="menuitem" data-wa target="_blank" rel="noopener">{{ t('whatsapp') }}</a>
+            <a role="menuitem" data-sms>{{ t('sms') }}</a>
+            <button role="menuitem" type="button" data-copy>{{ t('copy_link') }}</button>
+          </div>
+        </div>
+        <button class="act" type="button" data-listen data-say="{{ s.name }}. {{ tx.sx(s, 'amount') }}. {{ tx.sx(s, 'benefit') }} {{ t('who') }}: {{ tx.sx(s, 'who') }}. {{ t('how_apply') }}. {% for icon, text, link in steps %}{{ loop.index }}. {{ text }} {% endfor %}"><svg aria-hidden="true"><use href="#i-listen"/></svg><span>{{ t('listen') }}</span></button>
+      </div>
+    </div>
+    <svg class="px l" aria-hidden="true"><use href="{{ PX }}#{{ CAT_ICON.get(s.cat[0], 'form') }}"/></svg>
+  </header>
+
+  <div class="detail-grid">
+    <div class="main-col">
+      <section class="section" aria-labelledby="h-steps">
+        <h2 id="h-steps">{{ t('how_apply') }}</h2>
+        <ol class="steps">
+          {% for icon, text, link in steps %}
+          <li>
+            <svg class="px" aria-hidden="true"><use href="{{ PX }}#{{ icon }}"/></svg>
+            <div>
+              <p>{{ text }}</p>
+              {% if link %}
+              <span class="go"><a class="btn ghost" href="{{ link }}" {% if not link.startswith('tel:') %}target="_blank" rel="noopener"{% endif %}>{{ domain(link) if not link.startswith('tel:') else link[4:] }} <svg aria-hidden="true"><use href="#i-open"/></svg></a></span>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% if s.mode != 'auto' %}<p class="steps-note">{{ t('steps_note') }}</p>{% endif %}
+      </section>
+
+      <section class="section" aria-labelledby="h-elig">
+        <h2 id="h-elig">{{ t('eligibility') }}</h2>
+        <dl class="facts">
+          <dt>{{ t('who') }}</dt><dd>{{ tx.sx(s, 'who') }}</dd>
+          <dt>{{ t('el_age') }}</dt><dd>{{ tx.age_text(s) }}</dd>
+          <dt>{{ t('el_gender') }}</dt><dd>{{ t('gl_'+s.gender) }}</dd>
+          <dt>{{ t('el_work') }}</dt><dd>{% if s.occ %}{% for o in s.occ %}{{ (tx.occ_name(o)|ucfirst) if loop.first else tx.occ_name(o) }}{{ ', ' if not loop.last }}{% endfor %}{% else %}{{ t('el_any_work') }}{% endif %}</dd>
+          {% if s.needs %}<dt>{{ t('el_needs') }}</dt><dd>{{ tx.needs_text(s)|ucfirst }}</dd>{% endif %}
+          <dt>{{ t('el_where') }}</dt><dd>{{ t('why_central')|ucfirst if s.level=='central' else tx.st_name(s.state) }}</dd>
+        </dl>
+      </section>
+
+      {% if docs %}
+      <section class="section" aria-labelledby="h-docs">
+        <h2 id="h-docs">{{ t('documents') }}</h2>
+        <ul class="checklist" data-docs="{{ s.id }}">
+          {% for d in docs %}<li><label><input type="checkbox" value="{{ d }}"><span>{{ t('d_'+d) }}</span></label></li>{% endfor %}
+        </ul>
+        <p class="muted" style="margin-top:10px;font-size:.95rem">{{ t('documents_note') }}</p>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="side-col">
+      <div class="side-box">
+        {% if s.link %}
+          <a class="btn" href="{{ s.link }}" target="_blank" rel="noopener">{{ t('official') }} <svg aria-hidden="true"><use href="#i-open"/></svg></a>
+          <p class="dom">{{ domain(s.link) }}</p>
+        {% else %}
+          <a class="btn ghost" href="{{ search_url }}" target="_blank" rel="noopener">{{ t('find_official') }} <svg aria-hidden="true"><use href="#i-open"/></svg></a>
+          <p class="dom">{{ t('find_official_note') }}</p>
+        {% endif %}
+        <dl>
+          <dt>{{ t('how_mode') }}</dt><dd>{{ t('mode_' + s.mode) }}</dd>
+          {% if s.helpline %}<dt>{{ t('helpline') }}</dt><dd><a href="tel:{{ s.helpline|replace('-', '') }}">{{ s.helpline }}</a></dd>{% endif %}
+          <dt>{{ t('el_where') }}</dt><dd>{{ tx.where(s) }}</dd>
+        </dl>
+        <p class="muted" style="margin-top:14px;font-size:.88rem">{{ t('checked') }}</p>
+      </div>
+      <a class="check-link" href="{{ url_for('check') }}">
+        <svg class="px" aria-hidden="true"><use href="{{ PX }}#shield"/></svg>
+        <span><strong>{{ t('check_msg_t') }}</strong><span>{{ t('check_msg_b') }}</span></span>
+      </a>
+    </aside>
+    <div class="report-wrap">
+      <div class="side-box report" id="report">
+        <h2 style="font-size:1.05rem">{{ t('report') }}</h2>
+        {% if reported %}
+          <p style="margin-top:8px" role="status">{{ t('report_thanks') }}</p>
+        {% else %}
+          <form method="post" action="{{ url_for('report', sid=s.id) }}?lang={{ lang }}">
+            <label class="visually-hidden" for="rep">{{ t('report_ph') }}</label>
+            <textarea class="field" id="rep" name="text" maxlength="1000" placeholder="{{ t('report_ph') }}" required></textarea>
+            <button class="btn ghost" type="submit">{{ t('report_send') }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if related %}
+  <section class="related">
+    <h2 class="group-title">{{ t('related') }}</h2>
+    <ul class="rows" style="border-top:2px solid var(--line-strong)">{% for r in related %}{{ row(r) }}{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

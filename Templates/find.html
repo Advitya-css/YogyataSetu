@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import sentence_form, row with context %}
+{% block title %}{{ t('nav_find') }} · {{ t('site') }}{% endblock %}
+{% block main %}
+{% if not searched %}
+<div class="wrap">
+  <section class="hero" style="grid-template-columns:1fr">
+    <div>
+      <h1>{{ t('hero_title') }}</h1>
+      <p class="lead">{{ t('hero_sub') }}</p>
+      {{ sentence_form(profile, errors) }}
+    </div>
+  </section>
+</div>
+{% else %}
+{% set n = best|length + also|length %}
+<div class="wrap">
+  <div class="ask-compact">{{ sentence_form(profile, compact=True) }}</div>
+  <div class="results-head">
+    <h1 style="font-size:clamp(1.6rem,4vw,2.3rem)" aria-live="polite">{{ t('n_match_1') if n == 1 else t('n_match', n=n) }}</h1>
+    {% if n %}
+    <div class="res-filters">
+    <label class="visually-hidden" for="cat-filter">{{ t('f_cat') }}</label>
+    <select id="cat-filter" class="lang-select" data-cat-filter>
+      <option value="">{{ t('f_cat') }}: {{ t('any') }}</option>
+      {% for c in CATEGORIES %}<option value="{{ c }}">{{ t('c_'+c) }}</option>{% endfor %}
+    </select>
+    <div class="seg" role="group" aria-label="{{ t('f_level') }}">
+      <button type="button" data-level-filter="" aria-pressed="true">{{ t('filter_all') }}</button>
+      <button type="button" data-level-filter="central" aria-pressed="false">{{ t('filter_central') }}</button>
+      <button type="button" data-level-filter="state" aria-pressed="false">{{ t('filter_state') }}</button>
+    </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if best %}
+  <h2 class="group-title">{{ t('best') }} <span class="n">{{ best|length }}</span></h2>
+  <ul class="rows" data-filterable>{% for s, r in best %}{{ row(s, r) }}{% endfor %}</ul>
+  {% endif %}
+  {% if also %}
+  <h2 class="group-title">{{ t('also') }} <span class="n">{{ also|length }}</span></h2>
+  <ul class="rows" data-filterable>{% for s, r in also %}{{ row(s, r) }}{% endfor %}</ul>
+  {% endif %}
+  {% if not n %}
+  <div class="empty">
+    <h2>{{ t('none_title') }}</h2><p>{{ t('none_body') }}</p>
+    <a class="btn" href="{{ url_for('browse') }}">{{ t('nav_all') }}</a>
+  </div>
+  {% endif %}
+  {% if maybe %}
+  <h2 class="group-title">{{ t('maybe') }} <span class="n">{{ maybe|length }}</span></h2>
+  <p class="group-sub">{{ t('maybe_sub') }}</p>
+  <ul class="rows" data-filterable>{% for s, r in maybe %}{{ row(s, r, show_needs=True) }}{% endfor %}</ul>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
