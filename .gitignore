@@ -17,3 +17,5 @@ env/
 
 # Vercel deployment cache
 .vercel/
+node_modules/
+
