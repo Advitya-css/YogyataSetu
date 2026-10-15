@@ -24,7 +24,8 @@ import checker as checker_mod
 from store import RateLimit, Store
 
 BASE = Path(__file__).resolve().parent
-app = Flask(__name__, template_folder=str(BASE / 'Templates'), static_folder=str(BASE / 'static'))
+app = Flask(__name__, template_folder=str(BASE / 'Templates'), 
+            static_folder=str(BASE / 'public' / 'static'), static_url_path='/static')  # public/ is served by Vercel's CDN
 app.json.ensure_ascii = False
 
 # ---------------------------------------------------------------- languages

@@ -24,8 +24,8 @@ If Flask is missing: `python3 -m venv .venv && .venv/bin/pip install -r requirem
 | `data/states.json` | State names in all languages, state language, local service-centre name |
 | `i18n/<code>.json` | Interface text (buttons, labels, apply-step sentences) for each language |
 | `Templates/` | Page templates |
-| `static/pixels.svg` | Pixel-art icon set used for needs and apply steps |
-| `static/fonts/` | Self-hosted fonts for every script (each loads only when needed) |
+| `public/static/pixels.svg` | Pixel-art icon set used for needs and apply steps |
+| `public/static/fonts/` | Self-hosted fonts for every script (each loads only when needed) |
 | `data/reports.csv` | Created automatically when visitors report wrong information |
 | `checker.py` | "Real or fake?" engine: matches a name, link or message against real schemes and known fakes, and finds scam signs |
 | `store.py` | SQLite storage for the checker (checks, scam reports, admin decisions, extra fakes) |
@@ -77,3 +77,11 @@ Other settings: `YS_DB` (database path), `YS_SECRET` (session key, made automati
 - `GET|POST /api/match` with `age`, `gender`, `occupation`, `state`, optional `area`, `caste`, `more=1`, `bpl`, `minority`, `disability`, `widow`, `pregnant`
 
 Information compiled October 2026. Rules change often: keep `verify` flags and report feedback under review.
+
+## Deploy on Vercel
+
+Vercel finds `app` in `server.py` by itself, so `vercel.json` needs no rewrites (a rewrite sends every page to one path and Flask answers 404).
+CSS, JS, fonts and icons live in `public/static/`, which Vercel serves from its CDN; locally Flask serves the same folder.
+
+On Vercel the checker database is kept in `/tmp`, which is wiped whenever Vercel starts a new copy of the app, so checks counts, reports and admin decisions are temporary there.
+Set `YS_ADMIN_KEY` in the Vercel project's Environment Variables to use `/admin` online.
