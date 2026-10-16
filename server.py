@@ -55,6 +55,13 @@ STATE_LIST = sorted({s['state'] for s in SCHEMES if s['state']}, key=lambda x: x
 REPORTS_FILE = BASE / 'data' / 'reports.csv'
 
 
+@app.before_request
+def fix_vercel_path():
+    original_path = request.headers.get('x-matched-path') or request.environ.get('HTTP_X_MATCHED_PATH')
+    if original_path:
+        request.environ['PATH_INFO'] = original_path
+
+
 def get_lang():
     lang = request.args.get('lang') or request.cookies.get('lang')
     if lang not in UI:
