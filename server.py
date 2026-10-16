@@ -300,6 +300,7 @@ def match(p):
 
 # ---------------------------------------------------------------- pages
 @app.route('/')
+@app.route('/api/index')
 def home():
     counts = {c: sum(1 for s in SCHEMES if c in s['cat']) for c in CATEGORIES}
     state_counts = {st: sum(1 for s in SCHEMES if s['state'] == st) for st in STATE_LIST}
